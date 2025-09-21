@@ -19,7 +19,9 @@ import {
   Edit,
   Trash2,
   Search,
-  Filter
+  Filter,
+  Plus,
+  Receipt
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
