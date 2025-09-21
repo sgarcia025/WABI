@@ -77,8 +77,10 @@ const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
       await fetchCurrentUser();
+      toast.success('Sesión iniciada correctamente');
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, error: error.response?.data?.detail || 'Error al iniciar sesión' };
     }
   };
