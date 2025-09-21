@@ -17,6 +17,7 @@ import {
   Settings,
   Eye,
   Edit,
+  Trash2,
   Search,
   Filter
 } from 'lucide-react';
