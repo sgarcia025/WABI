@@ -20,7 +20,8 @@ const SubscriptionForm = () => {
     nombre_negocio: '',
     departamento: '',
     municipio: '',
-    numero_celular_negocio: ''
+    numero_celular_negocio: '',
+    plan: 'free'
   });
   
   const [loading, setLoading] = useState(false);
