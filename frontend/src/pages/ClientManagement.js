@@ -98,7 +98,7 @@ const ClientManagement = ({ currentUser }) => {
   const openPaymentDialog = (client) => {
     setPaymentClient(client);
     setPaymentForm({
-      amount: client.plan === 'pro' ? '99' : '0',
+      amount: client.plan === 'pro' ? '149' : '0',
       payment_method: 'cash',
       reference: '',
       period_month: new Date().toISOString().slice(0, 7)
