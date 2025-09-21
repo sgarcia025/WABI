@@ -34,6 +34,7 @@ import { toast } from "sonner";
 // Import pages
 import SubscriptionForm from "./pages/SubscriptionForm";
 import ProductsManager from "./pages/ProductsManager";
+import ProductManagement from "./pages/ProductManagement";
 import CreditScoring from "./pages/CreditScoring";
 import ClientManagement from "./pages/ClientManagement";
 import ConfigurationPanel from "./pages/ConfigurationPanel";
