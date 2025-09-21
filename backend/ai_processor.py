@@ -218,16 +218,40 @@ Si no es una transacción de negocio, responde normalmente de forma amigable."""
         Process a voice message by first transcribing it, then processing the text
         """
         try:
-            # TODO: Implement speech-to-text functionality
-            # For now, return a placeholder response
-            logger.info(f"Voice message received from {customer_phone} for SME {sme_id}")
+            from speech_processor import process_voice_message as stt_process
             
-            return {
-                "success": False,
-                "ai_response": "Recibí tu mensaje de voz. Por el momento, solo puedo procesar mensajes de texto. ¿Puedes escribir tu mensaje?",
-                "function_calls": [],
-                "note": "Voice processing not yet implemented"
-            }
+            logger.info(f"Processing voice message from {customer_phone} for SME {sme_id}")
+            
+            # Step 1: Speech-to-Text
+            stt_result = await stt_process(audio_url, sme_id, customer_phone)
+            
+            if not stt_result["success"]:
+                return {
+                    "success": False,
+                    "ai_response": "No pude procesar tu mensaje de voz. ¿Puedes escribir tu mensaje?",
+                    "function_calls": [],
+                    "error": stt_result.get("error"),
+                    "transcription": None
+                }
+            
+            transcribed_text = stt_result["transcription"]
+            logger.info(f"Transcribed voice message: '{transcribed_text[:100]}...'")
+            
+            # Step 2: Process transcribed text with AI
+            ai_result = await self.process_message(transcribed_text, sme_id, customer_phone)
+            
+            # Step 3: Add transcription info to result
+            ai_result["transcription"] = transcribed_text
+            ai_result["audio_url"] = audio_url
+            ai_result["stt_confidence"] = stt_result.get("confidence")
+            ai_result["audio_duration"] = stt_result.get("duration")
+            
+            # Enhance AI response with voice acknowledgment
+            if ai_result["success"]:
+                voice_ack = f"Escuché tu mensaje: \"{transcribed_text[:50]}{'...' if len(transcribed_text) > 50 else ''}\" \n\n"
+                ai_result["ai_response"] = voice_ack + ai_result["ai_response"]
+            
+            return ai_result
             
         except Exception as e:
             logger.error(f"Error processing voice message: {e}")
@@ -235,7 +259,8 @@ Si no es una transacción de negocio, responde normalmente de forma amigable."""
                 "success": False,
                 "error": str(e),
                 "ai_response": "No pude procesar tu mensaje de voz. ¿Puedes escribir tu mensaje?",
-                "function_calls": []
+                "function_calls": [],
+                "transcription": None
             }
 
 # Global processor instance
