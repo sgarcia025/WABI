@@ -550,6 +550,115 @@ async def get_webhook_logs(limit: int = 50, current_user: User = Depends(get_cur
     
     return clean_logs
 
+# Credit Scoring endpoints
+@api_router.post("/scoring/calculate/{sme_id}")
+async def calculate_credit_score(sme_id: str, current_user: User = Depends(get_current_user)):
+    """Calculate credit score for an SME"""
+    from credit_scorer import calculate_sme_score
+    
+    result = await calculate_sme_score(db, sme_id)
+    return result
+
+@api_router.get("/scoring/{sme_id}")
+async def get_credit_score(sme_id: str, current_user: User = Depends(get_current_user)):
+    """Get latest credit score for an SME"""
+    try:
+        # Get latest score
+        latest_score = await db.score_snapshots.find_one(
+            {"sme_id": sme_id},
+            sort=[("dt", -1)]
+        )
+        
+        if not latest_score:
+            # Calculate score if none exists
+            from credit_scorer import calculate_sme_score
+            result = await calculate_sme_score(db, sme_id)
+            return result
+        
+        # Clean up response
+        if "_id" in latest_score:
+            del latest_score["_id"]
+            
+        return {
+            "success": True,
+            **latest_score
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting credit score: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.get("/scoring/{sme_id}/history")
+async def get_score_history(sme_id: str, days: int = 30, current_user: User = Depends(get_current_user)):
+    """Get credit score history for an SME"""
+    from credit_scorer import get_sme_score_history
+    
+    history = await get_sme_score_history(db, sme_id, days)
+    return {
+        "success": True,
+        "sme_id": sme_id,
+        "history": history,
+        "days": days
+    }
+
+@api_router.get("/scoring/{sme_id}/recommendations")
+async def get_score_recommendations(sme_id: str, current_user: User = Depends(get_current_user)):
+    """Get credit recommendations for an SME"""
+    from credit_scorer import get_credit_recommendations
+    
+    recommendations = await get_credit_recommendations(db, sme_id)
+    return recommendations
+
+# Speech-to-Text test endpoint
+@api_router.post("/speech/test")
+async def test_speech_processing(current_user: User = Depends(get_current_user)):
+    """Test speech-to-text functionality"""
+    from speech_processor import test_speech_processor
+    
+    result = await test_speech_processor()
+    return result
+
+# Enhanced Products endpoints
+@api_router.put("/products/{product_id}")
+async def update_product(product_id: str, product_data: ProductCreate, sme_id: str, current_user: User = Depends(get_current_user)):
+    """Update a product"""
+    try:
+        updated_data = {
+            "name": product_data.name,
+            "unit_cost": product_data.unit_cost,
+            "sale_price": product_data.sale_price,
+            "service": product_data.service
+        }
+        
+        result = await db.products.update_one(
+            {"id": product_id, "sme_id": sme_id},
+            {"$set": updated_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        return {"success": True, "message": "Product updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating product: {e}")
+        raise HTTPException(status_code=500, detail="Error updating product")
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a product"""
+    try:
+        result = await db.products.delete_one({"id": product_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        return {"success": True, "message": "Product deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting product: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting product")
+
 async def process_ultramsg_message(payload: Dict[str, Any]):
     """Process WhatsApp message from Ultramsg"""
     try:
