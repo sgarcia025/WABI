@@ -424,6 +424,87 @@ const ClientManagement = ({ currentUser }) => {
         </CardContent>
       </Card>
 
+      {/* Payment Recording Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={closePaymentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Registrar Pago - {paymentClient?.nombre_negocio}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={recordPayment} className="space-y-4">
+            <div>
+              <Label htmlFor="amount">Monto (Q) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))}
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="payment_method">Método de Pago</Label>
+              <Select value={paymentForm.payment_method} onValueChange={(value) => setPaymentForm(prev => ({ ...prev, payment_method: value }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Efectivo</SelectItem>
+                  <SelectItem value="transfer">Transferencia</SelectItem>
+                  <SelectItem value="card">Tarjeta</SelectItem>
+                  <SelectItem value="wallet">Wallet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="period_month">Período</Label>
+              <Input
+                id="period_month"
+                type="month"
+                value={paymentForm.period_month}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, period_month: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="reference">Referencia</Label>
+              <Input
+                id="reference"
+                value={paymentForm.reference}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, reference: e.target.value }))}
+                placeholder="Número de transacción, recibo, etc."
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closePaymentDialog}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Registrar Pago
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Client Dialog */}
       <EditClientDialog
         client={editingClient}
