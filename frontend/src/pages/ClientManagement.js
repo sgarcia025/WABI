@@ -36,6 +36,14 @@ const ClientManagement = ({ currentUser }) => {
   const [planFilter, setPlanFilter] = useState('all');
   const [editingClient, setEditingClient] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentClient, setPaymentClient] = useState(null);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    payment_method: 'cash',
+    reference: '',
+    period_month: new Date().toISOString().slice(0, 7) // YYYY-MM format
+  });
 
   useEffect(() => {
     fetchClients();
