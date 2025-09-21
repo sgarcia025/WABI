@@ -218,12 +218,13 @@ const Sidebar = ({ currentSection, setCurrentSection }) => {
   
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
+    { id: 'clients', name: 'Clientes', icon: Users },
     { id: 'smes', name: 'Negocios', icon: Building2 },
     { id: 'products', name: 'Productos', icon: Package },
     { id: 'transactions', name: 'Transacciones', icon: Receipt },
-    { id: 'customers', name: 'Clientes', icon: Users },
     { id: 'scoring', name: 'Score Crediticio', icon: Calculator },
     { id: 'webhooks', name: 'WhatsApp', icon: Phone },
+    { id: 'configuration', name: 'Configuración', icon: Settings },
   ];
 
   return (
