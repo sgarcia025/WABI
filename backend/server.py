@@ -953,9 +953,20 @@ async def process_ultramsg_message(payload: Dict[str, Any]):
         else:
             response_text = ai_result["ai_response"]
         
-        # TODO: Send response back via Ultramsg API
-        # For now, just log it
-        logging.info(f"Response to {from_phone}: {response_text}")
+        # Send response back via WhatsApp if configured
+        if response_text and sme.get("ultramsg_instance_id") and sme.get("ultramsg_token"):
+            # Use SME-specific Ultramsg config
+            from ultramsg_client import UltramsgClient
+            sme_ultramsg = UltramsgClient(
+                instance_id=sme["ultramsg_instance_id"],
+                token=sme["ultramsg_token"]
+            )
+            
+            await sme_ultramsg.send_message(from_phone, response_text)
+            logging.info(f"Response sent to {from_phone}: {response_text[:100]}...")
+        else:
+            # Fall back to global config or just log
+            logging.info(f"Response to {from_phone}: {response_text}")
         
         # Update webhook log
         await db.webhook_logs.update_one(
