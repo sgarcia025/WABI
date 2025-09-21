@@ -437,11 +437,79 @@ async def ultramsg_webhook(request: Request):
     )
     await db.webhook_logs.insert_one(webhook_log.dict())
     
-    # TODO: Process WhatsApp message with IA
-    # For now, just log it
-    logging.info(f"Received WhatsApp message: {payload}")
+    # Process message asynchronously
+    asyncio.create_task(process_ultramsg_message(payload))
     
     return {"status": "received"}
+
+async def process_ultramsg_message(payload: Dict[str, Any]):
+    """Process WhatsApp message from Ultramsg"""
+    try:
+        from ai_processor import process_whatsapp_message, process_whatsapp_voice
+        from transaction_processor import TransactionProcessor
+        
+        message_type = payload.get("type", "chat")
+        from_phone = payload.get("from", "")
+        message_text = payload.get("message", "")
+        media_url = payload.get("mediaUrl", "")
+        
+        # Find SME by WhatsApp number (simplified - in production would be more sophisticated)
+        sme = await db.smes.find_one({"numero_celular_negocio": {"$regex": from_phone[-8:]}})
+        if not sme:
+            # Try to find any SME for demo purposes
+            sme = await db.smes.find_one()
+        
+        if not sme:
+            logging.warning(f"No SME found for phone {from_phone}")
+            return
+            
+        sme_id = sme["id"]
+        
+        # Process message with AI
+        if message_type == "chat" and message_text:
+            ai_result = await process_whatsapp_message(message_text, sme_id, from_phone)
+        elif message_type == "audio" and media_url:
+            ai_result = await process_whatsapp_voice(media_url, sme_id, from_phone)
+        else:
+            logging.info(f"Unsupported message type: {message_type}")
+            return
+        
+        # Execute function calls
+        transaction_processor = TransactionProcessor(db)
+        responses = []
+        
+        for func_call in ai_result.get("function_calls", []):
+            result = await transaction_processor.execute_function_call(
+                func_call["function"],
+                func_call["arguments"], 
+                sme_id,
+                from_phone
+            )
+            if result["success"]:
+                responses.append(result["message"])
+        
+        # Prepare response message
+        if responses:
+            response_text = ai_result["ai_response"] + "\n\n" + "\n".join(responses)
+        else:
+            response_text = ai_result["ai_response"]
+        
+        # TODO: Send response back via Ultramsg API
+        # For now, just log it
+        logging.info(f"Response to {from_phone}: {response_text}")
+        
+        # Update webhook log
+        await db.webhook_logs.update_one(
+            {"id": payload.get("messageId", "")},
+            {"$set": {"status": "processed", "ai_response": response_text}}
+        )
+        
+    except Exception as e:
+        logging.error(f"Error processing Ultramsg message: {e}")
+        await db.webhook_logs.update_one(
+            {"id": payload.get("messageId", "")},
+            {"$set": {"status": "error", "error": str(e)}}
+        )
 
 # Include the router in the main app
 app.include_router(api_router)
