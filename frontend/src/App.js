@@ -455,16 +455,18 @@ const MainContent = ({ currentSection, currentUser }) => {
     switch (currentSection) {
       case 'dashboard':
         return <DashboardOverview />;
+      case 'clients':
+        return <ClientManagement currentUser={currentUser} />;
       case 'smes':
         return <SMEsSection />;
       case 'products':
         return <ProductsManager currentUser={currentUser} />;
       case 'scoring':
         return <CreditScoring currentUser={currentUser} />;
+      case 'configuration':
+        return <ConfigurationPanel currentUser={currentUser} />;
       case 'transactions':
         return <div className="p-6"><h1 className="text-2xl font-bold">Transacciones</h1><p>Próximamente...</p></div>;
-      case 'customers':
-        return <div className="p-6"><h1 className="text-2xl font-bold">Clientes</h1><p>Próximamente...</p></div>;
       case 'webhooks':
         return <div className="p-6"><h1 className="text-2xl font-bold">WhatsApp</h1><p>Integración funcionando...</p></div>;
       default:
