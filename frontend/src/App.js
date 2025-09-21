@@ -462,6 +462,8 @@ const MainContent = ({ currentSection, currentUser }) => {
         return <SMEsSection />;
       case 'products':
         return <ProductsManager currentUser={currentUser} />;
+      case 'admin-products':
+        return <ProductManagement currentUser={currentUser} />;
       case 'scoring':
         return <CreditScoring currentUser={currentUser} />;
       case 'configuration':
