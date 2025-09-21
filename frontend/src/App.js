@@ -474,7 +474,15 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route 
-              path="/*" 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="*" 
               element={
                 <ProtectedRoute>
                   <AdminPanel />
