@@ -39,18 +39,24 @@ class TransactionProcessor:
     async def _record_sale(self, args: Dict[str, Any], sme_id: str, customer_phone: str) -> Dict[str, Any]:
         """Record a sale transaction"""
         try:
+            # Get product name - handle different possible keys
+            product_name = args.get("product_name") or args.get("product") or "Producto"
+            quantity = args.get("quantity") or args.get("qty") or 1
+            unit_price = args.get("unit_price") or (args.get("total_amount", 0) / quantity)
+            total_amount = args.get("total_amount") or args.get("amount") or 0
+            
             # Prepare transaction data
             transaction_data = {
                 "id": str(__import__('uuid').uuid4()),
                 "sme_id": sme_id,
                 "type": "credit_sale" if args.get("credit_terms_days") else "sale",
                 "items_json": [{
-                    "product_name": args["product_name"],
-                    "qty": args.get("quantity", 1),
-                    "unit_price": args.get("unit_price", args["total_amount"]),
-                    "total": args["total_amount"]
+                    "product_name": product_name,
+                    "qty": quantity,
+                    "unit_price": unit_price,
+                    "total": total_amount
                 }],
-                "amount": args["total_amount"],
+                "amount": total_amount,
                 "payment_method": args.get("payment_method", "cash"),
                 "customer_phone": customer_phone,
                 "source": "wa_text",
@@ -62,11 +68,11 @@ class TransactionProcessor:
             
             # If it's a credit sale, create receivable
             if args.get("credit_terms_days"):
-                await self._create_receivable(sme_id, customer_phone, args["total_amount"], args["credit_terms_days"])
+                await self._create_receivable(sme_id, customer_phone, total_amount, args["credit_terms_days"])
             
             return {
                 "success": True,
-                "message": f"Venta registrada: {args['product_name']} por Q{args['total_amount']:.2f}",
+                "message": f"Venta registrada: {product_name} por Q{total_amount:.2f}",
                 "transaction_id": transaction_data["id"]
             }
             
