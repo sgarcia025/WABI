@@ -603,9 +603,12 @@ class WABIAPITester:
         test_suites = [
             self.test_subscription_endpoint,
             self.test_sme_management,
+            self.test_sme_deletion,
             self.test_product_management,
             self.test_transaction_management,
+            self.test_payment_tracking_system,
             self.test_dashboard_endpoint,
+            self.test_configuration_endpoints,
             self.test_admin_endpoints,
             self.test_credit_scoring,
             self.test_whatsapp_integration,
