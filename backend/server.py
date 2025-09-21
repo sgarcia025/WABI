@@ -807,6 +807,126 @@ async def delete_credit_policy(policy_id: str, current_user: User = Depends(get_
         logger.error(f"Error deleting policy: {e}")
         raise HTTPException(status_code=500, detail="Error deleting policy")
 
+# Subscription Payment Tracking endpoints
+@api_router.post("/payments/record")
+async def record_payment(payment_data: dict, current_user: User = Depends(get_current_user)):
+    """Record a subscription payment"""
+    try:
+        # Get or create subscription
+        sme_id = payment_data["sme_id"]
+        amount = payment_data["amount"]
+        payment_method = payment_data["payment_method"]
+        period_month = payment_data.get("period_month", datetime.now(timezone.utc).strftime("%Y-%m"))
+        reference = payment_data.get("reference", "")
+        
+        # Check if SME exists
+        sme = await db.smes.find_one({"id": sme_id})
+        if not sme:
+            raise HTTPException(status_code=404, detail="SME not found")
+        
+        # Get or create subscription
+        subscription = await db.subscriptions.find_one({"sme_id": sme_id})
+        if not subscription:
+            # Create new subscription
+            new_subscription = Subscription(
+                sme_id=sme_id,
+                plan=PlanType(sme["plan"]),
+                monthly_fee=99.0 if sme["plan"] == "pro" else 0.0,
+                next_renewal=datetime.now(timezone.utc) + timedelta(days=30)
+            )
+            await db.subscriptions.insert_one(new_subscription.dict())
+            subscription_id = new_subscription.id
+        else:
+            subscription_id = subscription["id"]
+        
+        # Record payment
+        payment_record = PaymentRecord(
+            sme_id=sme_id,
+            subscription_id=subscription_id,
+            amount=amount,
+            payment_method=payment_method,
+            reference=reference,
+            period_month=period_month
+        )
+        
+        await db.payment_records.insert_one(payment_record.dict())
+        
+        # Update SME payment dates
+        next_payment = datetime.now(timezone.utc) + timedelta(days=30)
+        await db.smes.update_one(
+            {"id": sme_id},
+            {"$set": {
+                "last_payment": datetime.now(timezone.utc),
+                "next_payment_due": next_payment
+            }}
+        )
+        
+        return {
+            "success": True,
+            "message": "Payment recorded successfully",
+            "payment_id": payment_record.id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error recording payment: {e}")
+        raise HTTPException(status_code=500, detail="Error recording payment")
+
+@api_router.get("/payments/{sme_id}")
+async def get_payment_history(sme_id: str, current_user: User = Depends(get_current_user)):
+    """Get payment history for an SME"""
+    try:
+        payments = await db.payment_records.find({"sme_id": sme_id}).sort("payment_date", -1).to_list(100)
+        
+        # Clean payments for response
+        clean_payments = []
+        for payment in payments:
+            if "_id" in payment:
+                del payment["_id"]
+            clean_payments.append(payment)
+        
+        return {
+            "success": True,
+            "sme_id": sme_id,
+            "payments": clean_payments
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting payment history: {e}")
+        raise HTTPException(status_code=500, detail="Error getting payment history")
+
+@api_router.get("/admin/payments/overview")
+async def get_payments_overview(current_user: User = Depends(get_current_user)):
+    """Get overall payments overview for admin"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Get total payments for current month
+        current_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        monthly_payments = await db.payment_records.find({"period_month": current_month}).to_list(1000)
+        
+        total_monthly_revenue = sum(p["amount"] for p in monthly_payments)
+        total_payments_count = len(monthly_payments)
+        
+        # Get overdue clients
+        current_date = datetime.now(timezone.utc)
+        overdue_clients = await db.smes.find({
+            "next_payment_due": {"$lt": current_date},
+            "plan": "pro"
+        }).to_list(1000)
+        
+        return {
+            "success": True,
+            "monthly_revenue": total_monthly_revenue,
+            "payments_count": total_payments_count,
+            "overdue_count": len(overdue_clients),
+            "current_month": current_month
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting payments overview: {e}")
+        raise HTTPException(status_code=500, detail="Error getting payments overview")
+
 # WhatsApp Message Sending endpoint
 @api_router.post("/whatsapp/send")
 async def send_message_whatsapp(message_data: SendMessageRequest, current_user: User = Depends(get_current_user)):
