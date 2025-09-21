@@ -67,6 +67,21 @@ const ClientManagement = ({ currentUser }) => {
     }
   };
 
+  const deleteClient = async (clientId, clientName) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el cliente "${clientName}" y todos sus datos asociados? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/smes/${clientId}`);
+      toast.success('Cliente eliminado exitosamente');
+      fetchClients();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast.error('Error al eliminar cliente');
+    }
+  };
+
   const openEditDialog = (client) => {
     setEditingClient(client);
     setShowEditDialog(true);
