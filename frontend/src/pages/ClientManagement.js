@@ -270,7 +270,7 @@ const ClientManagement = ({ currentUser }) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {/* TODO: Edit client */}}
+                      onClick={() => openEditDialog(client)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
