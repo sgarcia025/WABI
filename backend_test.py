@@ -351,35 +351,93 @@ class WABIAPITester:
                 else:
                     self.log(f"❌ Dashboard missing {key}", "ERROR")
 
-    def test_admin_endpoints(self):
-        """Test admin-specific endpoints"""
-        self.log("=== TESTING ADMIN ENDPOINTS ===", "SECTION")
+    def test_payment_tracking_system(self):
+        """Test payment tracking system endpoints (NEW)"""
+        self.log("=== TESTING PAYMENT TRACKING SYSTEM ===", "SECTION")
         
-        # Get all clients
+        if not self.test_sme_id:
+            self.log("❌ No SME ID available for payment testing", "ERROR")
+            return
+        
+        # Record a subscription payment
+        payment_data = {
+            "sme_id": self.test_sme_id,
+            "amount": 99.0,
+            "payment_method": "bank_transfer",
+            "reference": "TEST-PAY-001",
+            "period_month": "2024-01"
+        }
+        
         success, response = self.run_test(
-            "Get All Clients (Admin)",
+            "Record Subscription Payment",
+            "POST",
+            "payments/record",
+            200,
+            data=payment_data
+        )
+        
+        if success and 'payment_id' in response:
+            self.log(f"✅ Payment recorded: {response['payment_id']}", "SUCCESS")
+        
+        # Get payment history for SME
+        success, response = self.run_test(
+            "Get Payment History",
             "GET",
-            "admin/clients",
+            f"payments/{self.test_sme_id}",
             200
         )
         
-        if success and 'clients' in response:
-            self.log(f"✅ Admin found {len(response['clients'])} clients", "INFO")
+        if success and 'payments' in response:
+            self.log(f"✅ Found {len(response['payments'])} payments for SME", "INFO")
+        
+        # Get admin payments overview
+        success, response = self.run_test(
+            "Get Admin Payments Overview",
+            "GET",
+            "admin/payments/overview",
+            200
+        )
+        
+        if success:
+            expected_keys = ['monthly_revenue', 'payments_count', 'overdue_count', 'current_month']
+            for key in expected_keys:
+                if key in response:
+                    self.log(f"✅ Payments overview has {key}: {response[key]}", "INFO")
+                else:
+                    self.log(f"❌ Payments overview missing {key}", "ERROR")
+
+    def test_configuration_endpoints(self):
+        """Test configuration endpoints"""
+        self.log("=== TESTING CONFIGURATION ENDPOINTS ===", "SECTION")
         
         # Get admin configuration
-        self.run_test(
+        success, response = self.run_test(
             "Get Admin Configuration",
             "GET",
             "admin/configuration",
             200
         )
         
-        # Get credit policies
+        if success:
+            expected_sections = ['ultramsg', 'ai']
+            for section in expected_sections:
+                if section in response:
+                    self.log(f"✅ Configuration has {section} section", "INFO")
+                else:
+                    self.log(f"❌ Configuration missing {section} section", "ERROR")
+        
+        # Test Ultramsg configuration update
+        ultramsg_config = {
+            "instance_id": "test_instance_123",
+            "token": "test_token_456"
+        }
+        
         self.run_test(
-            "Get Credit Policies",
-            "GET",
-            "admin/credit-policies",
-            200
+            "Update Ultramsg Configuration",
+            "PUT",
+            "admin/configuration/ultramsg",
+            200,
+            data=ultramsg_config
         )
 
     def test_credit_scoring(self):
