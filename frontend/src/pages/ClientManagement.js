@@ -330,6 +330,14 @@ const ClientManagement = ({ currentUser }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Client Dialog */}
+      <EditClientDialog
+        client={editingClient}
+        isOpen={showEditDialog}
+        onClose={closeEditDialog}
+        onClientUpdated={fetchClients}
+      />
     </div>
   );
 };
