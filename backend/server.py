@@ -831,7 +831,7 @@ async def record_payment(payment_data: dict, current_user: User = Depends(get_cu
             new_subscription = Subscription(
                 sme_id=sme_id,
                 plan=PlanType(sme["plan"]),
-                monthly_fee=99.0 if sme["plan"] == "pro" else 0.0,
+                monthly_fee=149.0 if sme["plan"] == "pro" else 0.0,
                 next_renewal=datetime.now(timezone.utc) + timedelta(days=30)
             )
             await db.subscriptions.insert_one(new_subscription.dict())
