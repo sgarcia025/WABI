@@ -440,6 +440,44 @@ class WABIAPITester:
             data=ultramsg_config
         )
 
+    def test_admin_endpoints(self):
+        """Test admin-specific endpoints"""
+        self.log("=== TESTING ADMIN ENDPOINTS ===", "SECTION")
+        
+        # Get all clients
+        success, response = self.run_test(
+            "Get All Clients (Admin)",
+            "GET",
+            "admin/clients",
+            200
+        )
+        
+        if success and 'clients' in response:
+            self.log(f"✅ Admin found {len(response['clients'])} clients", "INFO")
+            
+            # Test updating a client if we have one
+            if response['clients']:
+                client_id = response['clients'][0]['id']
+                update_data = {
+                    "nombre_negocio": "Updated via Admin API"
+                }
+                
+                self.run_test(
+                    "Update Client via Admin",
+                    "PUT",
+                    f"admin/clients/{client_id}",
+                    200,
+                    data=update_data
+                )
+        
+        # Get credit policies
+        self.run_test(
+            "Get Credit Policies",
+            "GET",
+            "admin/credit-policies",
+            200
+        )
+
     def test_credit_scoring(self):
         """Test credit scoring endpoints"""
         self.log("=== TESTING CREDIT SCORING ===", "SECTION")
