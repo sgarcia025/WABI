@@ -328,16 +328,17 @@ const SubscriptionForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="departamento">Departamento *</Label>
-                    <Select onValueChange={(value) => handleInputChange('departamento', value)}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Selecciona departamento" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departamentos.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select
+                      value={formData.departamento}
+                      onChange={(e) => handleInputChange('departamento', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md mt-1 focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366]"
+                      required
+                    >
+                      <option value="">Selecciona departamento</option>
+                      {departamentos.map((dept) => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
