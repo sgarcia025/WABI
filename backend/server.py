@@ -363,8 +363,15 @@ async def get_dashboard_data(current_user: User = Depends(get_current_user)):
     total_products = await db.products.count_documents({})
     total_transactions = await db.transactions.count_documents({})
     
-    # Get recent transactions
-    recent_transactions = await db.transactions.find().sort("created_at", -1).limit(10).to_list(10)
+    # Get recent transactions - limit and convert ObjectId to dict
+    recent_transactions_cursor = db.transactions.find().sort("created_at", -1).limit(10)
+    recent_transactions = []
+    
+    async for transaction in recent_transactions_cursor:
+        # Convert ObjectId to string and remove _id
+        if "_id" in transaction:
+            del transaction["_id"]
+        recent_transactions.append(transaction)
     
     return {
         "total_smes": total_smes,
