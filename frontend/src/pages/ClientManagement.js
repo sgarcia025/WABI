@@ -345,6 +345,15 @@ const ClientManagement = ({ currentUser }) => {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => openPaymentDialog(client)}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <Receipt className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => openEditDialog(client)}
                     >
                       <Edit className="w-4 h-4" />
