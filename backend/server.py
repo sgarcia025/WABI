@@ -174,6 +174,37 @@ async def update_sme(sme_id: str, sme_data: SMEUpdate, current_user: User = Depe
         logger.error(f"Error updating SME: {e}")
         raise HTTPException(status_code=500, detail="Error updating SME")
 
+@api_router.delete("/smes/{sme_id}")
+async def delete_sme(sme_id: str, current_user: User = Depends(get_current_user)):
+    """Delete SME and all associated data"""
+    try:
+        # Check if SME exists
+        sme = await db.smes.find_one({"id": sme_id})
+        if not sme:
+            raise HTTPException(status_code=404, detail="SME not found")
+        
+        # Delete all associated data
+        await db.products.delete_many({"sme_id": sme_id})
+        await db.transactions.delete_many({"sme_id": sme_id})
+        await db.customers.delete_many({"sme_id": sme_id})
+        await db.receivables.delete_many({"sme_id": sme_id})
+        await db.score_snapshots.delete_many({"sme_id": sme_id})
+        await db.subscriptions.delete_many({"sme_id": sme_id})
+        await db.payment_records.delete_many({"sme_id": sme_id})
+        await db.users.delete_many({"sme_id": sme_id})
+        
+        # Finally delete the SME
+        result = await db.smes.delete_one({"id": sme_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="SME not found")
+        
+        return {"success": True, "message": "SME and all associated data deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting SME: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting SME")
+
 # Product endpoints
 @api_router.post("/products", response_model=Product)
 async def create_product(product_data: ProductCreate, sme_id: str, current_user: User = Depends(get_current_user)):
