@@ -23,11 +23,18 @@ import {
   Phone,
   ShoppingCart,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Calculator,
+  UserPlus
 } from "lucide-react";
 import { useToast } from "./hooks/use-toast";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
+
+// Import pages
+import SubscriptionForm from "./pages/SubscriptionForm";
+import ProductsManager from "./pages/ProductsManager";
+import CreditScoring from "./pages/CreditScoring";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -183,6 +190,19 @@ const LoginForm = () => {
                 {loading ? "Ingresando..." : "Ingresar"}
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <Separator className="my-4" />
+              <p className="text-sm text-gray-600 mb-3">¿No tienes cuenta?</p>
+              <Button 
+                variant="outline"
+                onClick={() => window.open('/subscribe', '_blank')}
+                className="w-full border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Registrar mi Negocio
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -200,6 +220,7 @@ const Sidebar = ({ currentSection, setCurrentSection }) => {
     { id: 'products', name: 'Productos', icon: Package },
     { id: 'transactions', name: 'Transacciones', icon: Receipt },
     { id: 'customers', name: 'Clientes', icon: Users },
+    { id: 'scoring', name: 'Score Crediticio', icon: Calculator },
     { id: 'webhooks', name: 'WhatsApp', icon: Phone },
   ];
 
@@ -426,7 +447,7 @@ const SMEsSection = () => {
   );
 };
 
-const MainContent = ({ currentSection }) => {
+const MainContent = ({ currentSection, currentUser }) => {
   const renderSection = () => {
     switch (currentSection) {
       case 'dashboard':
@@ -434,13 +455,15 @@ const MainContent = ({ currentSection }) => {
       case 'smes':
         return <SMEsSection />;
       case 'products':
-        return <div className="p-6"><h1 className="text-2xl font-bold">Productos</h1><p>Próximamente...</p></div>;
+        return <ProductsManager currentUser={currentUser} />;
+      case 'scoring':
+        return <CreditScoring currentUser={currentUser} />;
       case 'transactions':
         return <div className="p-6"><h1 className="text-2xl font-bold">Transacciones</h1><p>Próximamente...</p></div>;
       case 'customers':
         return <div className="p-6"><h1 className="text-2xl font-bold">Clientes</h1><p>Próximamente...</p></div>;
       case 'webhooks':
-        return <div className="p-6"><h1 className="text-2xl font-bold">WhatsApp</h1><p>Integración próximamente...</p></div>;
+        return <div className="p-6"><h1 className="text-2xl font-bold">WhatsApp</h1><p>Integración funcionando...</p></div>;
       default:
         return <DashboardOverview />;
     }
@@ -457,11 +480,12 @@ const MainContent = ({ currentSection }) => {
 
 const AdminPanel = () => {
   const [currentSection, setCurrentSection] = useState('dashboard');
+  const { user } = useAuth();
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar currentSection={currentSection} setCurrentSection={setCurrentSection} />
-      <MainContent currentSection={currentSection} />
+      <MainContent currentSection={currentSection} currentUser={user} />
     </div>
   );
 };
@@ -483,6 +507,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginForm />} />
+            <Route path="/subscribe" element={<SubscriptionForm />} />
             <Route 
               path="/" 
               element={
