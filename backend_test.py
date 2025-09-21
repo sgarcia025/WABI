@@ -178,6 +178,72 @@ class WABIAPITester:
                 data=update_data
             )
 
+    def test_sme_deletion(self):
+        """Test SME deletion with cascading deletion"""
+        self.log("=== TESTING SME DELETION ===", "SECTION")
+        
+        # Create a test SME specifically for deletion testing
+        test_sme_data = {
+            "nombre": "Delete Test User",
+            "username": "deletetest",
+            "celular": "50299999999",
+            "nombre_negocio": "Delete Test Business",
+            "departamento": "Guatemala",
+            "municipio": "Guatemala",
+            "numero_celular_negocio": "50299999998",
+            "plan": "free"
+        }
+        
+        success, response = self.run_test(
+            "Create SME for Deletion Test",
+            "POST",
+            "subscribe",
+            200,
+            data=test_sme_data
+        )
+        
+        if success and 'sme_id' in response:
+            delete_sme_id = response['sme_id']
+            self.log(f"✅ Created SME for deletion: {delete_sme_id}", "SUCCESS")
+            
+            # Create some associated data first
+            product_data = {
+                "name": "Test Product for Deletion",
+                "unit_cost": 1.0,
+                "sale_price": 2.0,
+                "service": False,
+                "category": "Test"
+            }
+            
+            self.run_test(
+                "Create Product for Deletion Test",
+                "POST",
+                f"products?sme_id={delete_sme_id}",
+                200,
+                data=product_data
+            )
+            
+            # Now test the DELETE endpoint
+            success, response = self.run_test(
+                "Delete SME with Cascading Deletion",
+                "DELETE",
+                f"smes/{delete_sme_id}",
+                200
+            )
+            
+            if success:
+                self.log("✅ SME deletion with cascading completed successfully", "SUCCESS")
+                
+                # Verify SME is actually deleted
+                self.run_test(
+                    "Verify SME Deleted",
+                    "GET",
+                    f"smes/{delete_sme_id}",
+                    404  # Should return 404 not found
+                )
+        else:
+            self.log("❌ Failed to create SME for deletion test", "ERROR")
+
     def test_product_management(self):
         """Test product management endpoints"""
         self.log("=== TESTING PRODUCT MANAGEMENT ===", "SECTION")
