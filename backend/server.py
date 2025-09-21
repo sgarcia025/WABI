@@ -442,6 +442,114 @@ async def ultramsg_webhook(request: Request):
     
     return {"status": "received"}
 
+# Test endpoint to simulate WhatsApp messages
+@api_router.post("/test/whatsapp-message")
+async def test_whatsapp_message(request: dict, current_user: User = Depends(get_current_user)):
+    """Test endpoint to simulate WhatsApp message processing"""
+    message = request.get("message", "")
+    phone = request.get("phone", "50212345678")
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    # Create simulated Ultramsg payload
+    payload = {
+        "instanceId": "test_instance",
+        "from": phone,
+        "to": "wabi_instance", 
+        "message": message,
+        "type": "chat",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "messageId": f"test_{__import__('uuid').uuid4()}"
+    }
+    
+    # Process the message
+    await process_ultramsg_message(payload)
+    
+    return {"status": "processed", "message": "Mensaje procesado exitosamente"}
+
+# Reports endpoints
+@api_router.get("/reports/top-sold")
+async def get_top_sold_report(sme_id: str, range: str = "today", current_user: User = Depends(get_current_user)):
+    """Get top selling products report"""
+    from transaction_processor import TransactionProcessor
+    
+    processor = TransactionProcessor(db)
+    
+    # Calculate date range
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    
+    if range == "today":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif range == "7d":
+        start_date = now - timedelta(days=7)
+    elif range == "30d":
+        start_date = now - timedelta(days=30)
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    result = await processor._get_top_sold_products(sme_id, start_date)
+    return result
+
+@api_router.get("/reports/top-profitable") 
+async def get_top_profitable_report(sme_id: str, range: str = "today", current_user: User = Depends(get_current_user)):
+    """Get most profitable products report"""
+    from transaction_processor import TransactionProcessor
+    
+    processor = TransactionProcessor(db)
+    
+    # Calculate date range  
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    
+    if range == "today":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif range == "7d":
+        start_date = now - timedelta(days=7) 
+    elif range == "30d":
+        start_date = now - timedelta(days=30)
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    result = await processor._get_top_profitable_products(sme_id, start_date)
+    return result
+
+@api_router.get("/reports/daily-summary")
+async def get_daily_summary_report(sme_id: str, date: str = None, current_user: User = Depends(get_current_user)):
+    """Get daily business summary"""
+    from transaction_processor import TransactionProcessor
+    
+    processor = TransactionProcessor(db)
+    
+    # Parse date or use today
+    if date:
+        try:
+            from datetime import datetime as dt
+            report_date = dt.fromisoformat(date).replace(tzinfo=timezone.utc)
+        except:
+            report_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        report_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    result = await processor._get_daily_summary(sme_id, report_date)
+    return result
+
+# Webhook logs endpoint
+@api_router.get("/webhooks/logs")
+async def get_webhook_logs(limit: int = 50, current_user: User = Depends(get_current_user)):
+    """Get webhook processing logs"""
+    logs = await db.webhook_logs.find().sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Clean logs for response
+    clean_logs = []
+    for log in logs:
+        if "_id" in log:
+            del log["_id"]
+        clean_logs.append(log)
+    
+    return clean_logs
+
 async def process_ultramsg_message(payload: Dict[str, Any]):
     """Process WhatsApp message from Ultramsg"""
     try:
