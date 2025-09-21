@@ -16,6 +16,10 @@ from passlib.context import CryptContext
 import bcrypt
 from enum import Enum
 
+# Import models and clients
+from models import *
+from ultramsg_client import ultramsg_client, send_whatsapp_message
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
