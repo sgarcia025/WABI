@@ -279,7 +279,7 @@ const ClientManagement = ({ currentUser }) => {
               <div>
                 <p className="text-sm text-gray-600">Ingresos Mensuales</p>
                 <p className="text-2xl font-bold text-[#25D366]">
-                  Q{(clients.filter(c => c.plan === 'pro').length * 99).toLocaleString()}
+                  Q{(clients.filter(c => c.plan === 'pro').length * 149).toLocaleString()}
                 </p>
               </div>
               <DollarSign className="w-8 h-8 text-[#25D366]" />
