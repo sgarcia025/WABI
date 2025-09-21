@@ -291,6 +291,15 @@ const ClientManagement = ({ currentUser }) => {
                       <Edit className="w-4 h-4" />
                     </Button>
                     
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteClient(client.id, client.nombre_negocio)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                    
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={client.status === 'active'}
