@@ -94,6 +94,54 @@ const ClientManagement = ({ currentUser }) => {
     }
   };
 
+  const openPaymentDialog = (client) => {
+    setPaymentClient(client);
+    setPaymentForm({
+      amount: client.plan === 'pro' ? '99' : '0',
+      payment_method: 'cash',
+      reference: '',
+      period_month: new Date().toISOString().slice(0, 7)
+    });
+    setShowPaymentDialog(true);
+  };
+
+  const closePaymentDialog = () => {
+    setPaymentClient(null);
+    setShowPaymentDialog(false);
+    setPaymentForm({
+      amount: '',
+      payment_method: 'cash',
+      reference: '',
+      period_month: new Date().toISOString().slice(0, 7)
+    });
+  };
+
+  const recordPayment = async (e) => {
+    e.preventDefault();
+    
+    if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) {
+      toast.error('El monto debe ser mayor a 0');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/payments/record`, {
+        sme_id: paymentClient.id,
+        amount: parseFloat(paymentForm.amount),
+        payment_method: paymentForm.payment_method,
+        reference: paymentForm.reference,
+        period_month: paymentForm.period_month
+      });
+      
+      toast.success('Pago registrado exitosamente');
+      fetchClients();
+      closePaymentDialog();
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast.error('Error al registrar pago');
+    }
+  };
+
   const openEditDialog = (client) => {
     setEditingClient(client);
     setShowEditDialog(true);
