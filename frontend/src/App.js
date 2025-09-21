@@ -35,6 +35,8 @@ import { toast } from "sonner";
 import SubscriptionForm from "./pages/SubscriptionForm";
 import ProductsManager from "./pages/ProductsManager";
 import CreditScoring from "./pages/CreditScoring";
+import ClientManagement from "./pages/ClientManagement";
+import ConfigurationPanel from "./pages/ConfigurationPanel";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
