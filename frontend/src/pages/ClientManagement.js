@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import EditClientDialog from './EditClientDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
