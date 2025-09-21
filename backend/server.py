@@ -631,7 +631,8 @@ async def update_product(product_id: str, product_data: ProductCreate, sme_id: s
             "name": product_data.name,
             "unit_cost": product_data.unit_cost,
             "sale_price": product_data.sale_price,
-            "service": product_data.service
+            "service": product_data.service,
+            "category": product_data.category
         }
         
         result = await db.products.update_one(
@@ -662,6 +663,243 @@ async def delete_product(product_id: str, current_user: User = Depends(get_curre
     except Exception as e:
         logger.error(f"Error deleting product: {e}")
         raise HTTPException(status_code=500, detail="Error deleting product")
+
+# Administrative endpoints
+@api_router.get("/admin/clients")
+async def get_all_clients(current_user: User = Depends(get_current_user)):
+    """Get all SME clients for admin management"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        clients = await db.smes.find().to_list(1000)
+        
+        # Clean clients for response
+        clean_clients = []
+        for client in clients:
+            if "_id" in client:
+                del client["_id"]
+            clean_clients.append(client)
+        
+        return {"success": True, "clients": clean_clients}
+        
+    except Exception as e:
+        logger.error(f"Error fetching clients: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching clients")
+
+@api_router.put("/admin/clients/{client_id}/status")
+async def update_client_status(client_id: str, status_data: dict, current_user: User = Depends(get_current_user)):
+    """Update SME client status"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        result = await db.smes.update_one(
+            {"id": client_id},
+            {"$set": {"status": status_data["status"]}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Client not found")
+        
+        return {"success": True, "message": "Client status updated"}
+        
+    except Exception as e:
+        logger.error(f"Error updating client status: {e}")
+        raise HTTPException(status_code=500, detail="Error updating client status")
+
+@api_router.get("/admin/configuration")
+async def get_admin_configuration(current_user: User = Depends(get_current_user)):
+    """Get system configuration"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Get Ultramsg config (masked for security)
+        ultramsg_config = {
+            "instance_id": os.getenv("ULTRAMSG_INSTANCE_ID", ""),
+            "token": "••••••••" if os.getenv("ULTRAMSG_TOKEN") else "",
+            "status": "disconnected"
+        }
+        
+        # Get AI config
+        ai_config = {
+            "use_emergent_key": bool(os.getenv("EMERGENT_LLM_KEY")),
+            "openai_api_key": "••••••••" if os.getenv("OPENAI_API_KEY") else "",
+            "model": "gpt-4o-mini"
+        }
+        
+        return {
+            "success": True,
+            "ultramsg": ultramsg_config,
+            "ai": ai_config
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting configuration: {e}")
+        raise HTTPException(status_code=500, detail="Error getting configuration")
+
+@api_router.put("/admin/configuration/ultramsg")
+async def update_ultramsg_config(config_data: dict, current_user: User = Depends(get_current_user)):
+    """Update Ultramsg configuration"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Update environment variables (in production, this would be in a config file)
+        os.environ["ULTRAMSG_INSTANCE_ID"] = config_data.get("instance_id", "")
+        os.environ["ULTRAMSG_TOKEN"] = config_data.get("token", "")
+        
+        # Update global client
+        ultramsg_client.instance_id = config_data.get("instance_id", "")
+        ultramsg_client.token = config_data.get("token", "")
+        
+        return {"success": True, "message": "Ultramsg configuration updated"}
+        
+    except Exception as e:
+        logger.error(f"Error updating Ultramsg config: {e}")
+        raise HTTPException(status_code=500, detail="Error updating configuration")
+
+@api_router.put("/admin/configuration/ai")
+async def update_ai_config(config_data: dict, current_user: User = Depends(get_current_user)):
+    """Update AI configuration"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        if not config_data.get("use_emergent_key", True):
+            os.environ["OPENAI_API_KEY"] = config_data.get("openai_api_key", "")
+        
+        return {"success": True, "message": "AI configuration updated"}
+        
+    except Exception as e:
+        logger.error(f"Error updating AI config: {e}")
+        raise HTTPException(status_code=500, detail="Error updating configuration")
+
+@api_router.post("/admin/test/ultramsg")
+async def test_ultramsg(test_data: dict, current_user: User = Depends(get_current_user)):
+    """Test Ultramsg connection"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Temporarily create client with test credentials
+        from ultramsg_client import UltramsgClient
+        test_client = UltramsgClient(
+            instance_id=test_data.get("instance_id"),
+            token=test_data.get("token")
+        )
+        
+        result = await test_client.test_connection()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error testing Ultramsg: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/admin/test/ai")
+async def test_ai(current_user: User = Depends(get_current_user)):
+    """Test AI connection"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        from speech_processor import test_speech_processor
+        result = await test_speech_processor()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error testing AI: {e}")
+        return {"success": False, "error": str(e)}
+
+# Credit Policy endpoints
+@api_router.get("/admin/credit-policies")
+async def get_credit_policies(current_user: User = Depends(get_current_user)):
+    """Get all credit policies"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.FINANZAS]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        policies = await db.credit_policies.find().to_list(1000)
+        
+        # Clean policies for response
+        clean_policies = []
+        for policy in policies:
+            if "_id" in policy:
+                del policy["_id"]
+            clean_policies.append(policy)
+        
+        return {"success": True, "policies": clean_policies}
+        
+    except Exception as e:
+        logger.error(f"Error fetching credit policies: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching policies")
+
+@api_router.post("/admin/credit-policies")
+async def create_credit_policy(policy_data: CreditPolicyCreate, current_user: User = Depends(get_current_user)):
+    """Create new credit policy"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.FINANZAS]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Get tenant (for now use default)
+        tenant = await db.tenants.find_one({"name": "default"})
+        if not tenant:
+            # Create default tenant if not exists
+            default_tenant = Tenant(name="default", country="Guatemala")
+            await db.tenants.insert_one(default_tenant.dict())
+            tenant_id = default_tenant.id
+        else:
+            tenant_id = tenant["id"]
+        
+        policy = CreditPolicy(
+            tenant_id=tenant_id,
+            band=policy_data.band,
+            max_amount=policy_data.max_amount,
+            max_tenor_days=policy_data.max_tenor_days,
+            interest_rate=policy_data.interest_rate,
+            approval_probability=policy_data.approval_probability,
+            min_score_required=policy_data.min_score_required,
+            additional_requirements=policy_data.additional_requirements
+        )
+        
+        await db.credit_policies.insert_one(policy.dict())
+        
+        return {"success": True, "message": "Credit policy created", "policy_id": policy.id}
+        
+    except Exception as e:
+        logger.error(f"Error creating credit policy: {e}")
+        raise HTTPException(status_code=500, detail="Error creating policy")
+
+@api_router.delete("/admin/credit-policies/{policy_id}")
+async def delete_credit_policy(policy_id: str, current_user: User = Depends(get_current_user)):
+    """Delete credit policy"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.FINANZAS]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        result = await db.credit_policies.delete_one({"id": policy_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Policy not found")
+        
+        return {"success": True, "message": "Policy deleted"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting policy: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting policy")
+
+# WhatsApp Message Sending endpoint
+@api_router.post("/whatsapp/send")
+async def send_message_whatsapp(message_data: SendMessageRequest, current_user: User = Depends(get_current_user)):
+    """Send message via WhatsApp"""
+    try:
+        result = await send_whatsapp_message(message_data.to, message_data.message)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error sending WhatsApp message: {e}")
+        return {"success": False, "error": str(e)}
 
 async def process_ultramsg_message(payload: Dict[str, Any]):
     """Process WhatsApp message from Ultramsg"""
