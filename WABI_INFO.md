@@ -13,7 +13,7 @@
 ## 🔐 CREDENCIALES DE ACCESO
 
 ### Admin Principal:
-- **URL:** https://wabi-platform-1.preview.emergentagent.com
+- **URL:** https://sme-whatsapp.preview.emergentagent.com
 - **Teléfono:** 50212345678
 - **Contraseña:** admin123
 - **Rol:** Administrador
@@ -24,14 +24,14 @@
 
 ### Endpoint Webhook:
 ```
-POST https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+POST https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 ```
 
 ### ⚙️ Configuración en Panel Ultramsg:
 1. Ir a tu panel de Ultramsg
 2. Seleccionar tu instancia de WhatsApp
 3. En "Webhooks", configurar:
-   - **URL:** `https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg`
+   - **URL:** `https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg`
    - **Eventos:** Message, Audio (para mensajes de texto y voz)
    - **Método:** POST
 
@@ -185,7 +185,7 @@ Para mensajes de voz:
 
 ## 🚀 ¿CÓMO USAR?
 
-1. **Acceder al panel:** https://wabi-platform-1.preview.emergentagent.com
+1. **Acceder al panel:** https://sme-whatsapp.preview.emergentagent.com
 2. **Login:** 50212345678 / admin123
 3. **Configurar Ultramsg** con el webhook endpoint
 4. **Enviar mensaje WhatsApp** a tu instancia (se loggeará automáticamente)

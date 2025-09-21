@@ -233,11 +233,11 @@ POST /api/whatsapp/send - Enviar mensaje por WhatsApp
 ## 🔧 CONFIGURACIÓN Y DEPLOYMENT
 
 ### 🌐 **URLs del Sistema Completo:**
-- **Panel Admin**: https://wabi-platform-1.preview.emergentagent.com
+- **Panel Admin**: https://sme-whatsapp.preview.emergentagent.com
 - **Gestión de Clientes**: Panel Admin → Clientes
 - **Configuración**: Panel Admin → Configuración  
-- **Formulario Público**: https://wabi-platform-1.preview.emergentagent.com/subscribe
-- **Webhook Ultramsg**: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+- **Formulario Público**: https://sme-whatsapp.preview.emergentagent.com/subscribe
+- **Webhook Ultramsg**: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 
 ### 🔑 **Configuración de APIs:**
 - **Ultramsg**: Se configura en Panel → Configuración → WhatsApp

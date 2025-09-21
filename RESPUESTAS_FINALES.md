@@ -23,7 +23,7 @@
 ### 🎯 **Endpoint Correcto para Configurar en Ultramsg:**
 
 ```
-URL: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+URL: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 Método: POST
 Eventos: message, audio
 ```
@@ -32,7 +32,7 @@ Eventos: message, audio
 1. Ir a tu panel de Ultramsg
 2. Seleccionar tu instancia de WhatsApp
 3. En "Webhooks", configurar:
-   - **URL**: `https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg`
+   - **URL**: `https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg`
    - **Eventos**: message, audio (para mensajes de texto y voz)
    - **Método**: POST
 
@@ -241,7 +241,7 @@ POST /api/admin/test/ai - Probar conexión IA
 
 ```bash
 # WEBHOOK ULTRAMSG (Configurar en panel Ultramsg)
-POST https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+POST https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 
 # GESTIÓN DE CLIENTES
 GET /api/admin/clients - Listar todos los clientes
@@ -287,9 +287,9 @@ POST /api/test/whatsapp-message - Probar procesamiento IA
 ---
 
 **URLs de Acceso:**
-- **Panel Admin**: https://wabi-platform-1.preview.emergentagent.com
-- **Registro**: https://wabi-platform-1.preview.emergentagent.com/subscribe
-- **Webhook**: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+- **Panel Admin**: https://sme-whatsapp.preview.emergentagent.com
+- **Registro**: https://sme-whatsapp.preview.emergentagent.com/subscribe
+- **Webhook**: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 
 **Credenciales:** `50212345678` / `admin123`
 

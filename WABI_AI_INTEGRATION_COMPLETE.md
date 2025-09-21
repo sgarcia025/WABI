@@ -171,9 +171,9 @@ Y la IA procesará todo automáticamente, manteniendo su contabilidad al día si
 
 ---
 
-**URL Plataforma**: https://wabi-platform-1.preview.emergentagent.com
+**URL Plataforma**: https://sme-whatsapp.preview.emergentagent.com
 **Usuario**: 50212345678 / admin123
-**Webhook**: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+**Webhook**: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 **Test API**: POST /api/test/whatsapp-message
 
 ¡WABI + IA = Revolución para PyMEs guatemaltecas! 🇬🇹✨

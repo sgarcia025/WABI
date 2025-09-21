@@ -9,7 +9,7 @@
 ## 📝 1. FORMULARIO DE SUSCRIPCIÓN PÚBLICO
 
 ### 🌐 **URL Pública:** 
-- **https://wabi-platform-1.preview.emergentagent.com/subscribe**
+- **https://sme-whatsapp.preview.emergentagent.com/subscribe**
 
 ### 📋 **Características:**
 - ✅ Formulario completo con validación
@@ -230,9 +230,9 @@ Función: record_sale(product_name="Tortillas", quantity=5, unit_price=2, total_
 ## 🔧 8. CONFIGURACIÓN Y DEPLOYMENT
 
 ### 📍 **URLs del Sistema:**
-- **Panel Admin**: https://wabi-platform-1.preview.emergentagent.com
-- **Formulario Público**: https://wabi-platform-1.preview.emergentagent.com/subscribe
-- **Webhook Ultramsg**: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+- **Panel Admin**: https://sme-whatsapp.preview.emergentagent.com
+- **Formulario Público**: https://sme-whatsapp.preview.emergentagent.com/subscribe
+- **Webhook Ultramsg**: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 
 ### 🔑 **Credenciales de Prueba:**
 - **Admin**: `50212345678` / `admin123`
@@ -306,7 +306,7 @@ Función: record_sale(product_name="Tortillas", quantity=5, unit_price=2, total_
 
 ### 🌐 **Configuración Ultramsg:**
 ```
-URL Webhook: https://wabi-platform-1.preview.emergentagent.com/api/webhooks/ultramsg
+URL Webhook: https://sme-whatsapp.preview.emergentagent.com/api/webhooks/ultramsg
 Método: POST
 Eventos: message, audio
 ```
