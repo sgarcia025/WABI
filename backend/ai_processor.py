@@ -148,36 +148,58 @@ Cuando identifiques una transacción, usa las funciones apropiadas para registra
                 system_message=self.system_message
             ).with_model("openai", "gpt-4o-mini")
             
-            # Add function tools to the chat
-            for function in WABI_FUNCTIONS:
-                chat.add_function_tool(
-                    name=function["name"],
-                    description=function["description"],
-                    parameters=function["parameters"]
-                )
+            # Create user message with function definitions
+            enhanced_message = f"""Mensaje del cliente: "{message}"
+
+Analiza este mensaje y extrae información sobre transacciones de negocio. Si identificas una venta, gasto, nuevo producto, pago de cliente o solicitud de reporte, responde en formato JSON con la siguiente estructura:
+
+{{
+    "action": "function_call",
+    "function": "nombre_de_la_funcion",
+    "arguments": {{...argumentos...}},
+    "response": "respuesta_amigable_al_cliente"
+}}
+
+Funciones disponibles:
+- record_sale: para ventas
+- record_expense: para gastos  
+- add_product_or_service: para agregar productos
+- register_receivable_payment: para pagos de clientes
+- query_report: para reportes
+
+Si no es una transacción de negocio, responde normalmente de forma amigable."""
             
-            # Create user message
-            user_message = UserMessage(text=message)
+            user_message = UserMessage(text=enhanced_message)
             
             # Send message and get response
             response = await chat.send_message(user_message)
             
             # Parse the response
+            response_text = response.text if hasattr(response, 'text') else str(response)
+            
+            # Try to parse JSON response
+            function_calls = []
+            try:
+                import json
+                if response_text.strip().startswith('{') and '"action"' in response_text:
+                    parsed = json.loads(response_text)
+                    if parsed.get("action") == "function_call":
+                        function_calls.append({
+                            "function": parsed.get("function"),
+                            "arguments": parsed.get("arguments", {}),
+                            "id": f"call_{__import__('uuid').uuid4()}"
+                        })
+                        response_text = parsed.get("response", "Procesando tu solicitud...")
+            except:
+                # If not JSON, treat as regular response
+                pass
+            
             result = {
                 "success": True,
-                "ai_response": response.text if hasattr(response, 'text') else str(response),
-                "function_calls": [],
+                "ai_response": response_text,
+                "function_calls": function_calls,
                 "raw_response": response
             }
-            
-            # Check if there were function calls
-            if hasattr(response, 'function_calls') and response.function_calls:
-                for func_call in response.function_calls:
-                    result["function_calls"].append({
-                        "function": func_call.name,
-                        "arguments": func_call.arguments,
-                        "id": func_call.id if hasattr(func_call, 'id') else None
-                    })
             
             logger.info(f"AI processed message successfully: {len(result['function_calls'])} function calls")
             return result
