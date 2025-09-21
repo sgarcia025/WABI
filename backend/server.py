@@ -5,16 +5,14 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
-import asyncio
 from pathlib import Path
-from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import bcrypt
-from enum import Enum
+import asyncio
 
 # Import models and clients
 from models import *
@@ -38,165 +36,6 @@ security = HTTPBearer()
 
 app = FastAPI(title="WABI Platform API")
 api_router = APIRouter(prefix="/api")
-
-# Enums
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    FINANZAS = "finanzas"
-    SOPORTE = "soporte"
-    PARTNER = "partner"
-
-class PlanType(str, Enum):
-    FREE = "free"
-    PRO = "pro"
-
-class TransactionType(str, Enum):
-    SALE = "sale"
-    EXPENSE = "expense"
-    RECEIVABLE = "receivable"
-    PAYMENT = "payment"
-
-class PaymentMethod(str, Enum):
-    CASH = "cash"
-    TRANSFER = "transfer"
-    WALLET = "wallet"
-    CARD = "card"
-    CREDIT_SALE = "credit_sale"
-
-# Models
-class Tenant(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    country: str
-    status: str = "active"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class SME(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    tenant_id: str
-    nombre_negocio: str
-    owner_phone: str
-    departamento: str
-    municipio: str
-    numero_celular_negocio: str
-    plan: PlanType = PlanType.FREE
-    status: str = "active"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class User(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: Optional[str] = None
-    role: UserRole
-    phone: str
-    name: str
-    email: Optional[str] = None
-    hashed_password: str
-    status: str = "active"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class Product(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: str
-    name: str
-    unit_cost: Optional[float] = 0
-    sale_price: float
-    service: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class Transaction(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: str
-    type: TransactionType
-    items_json: Optional[List[Dict[str, Any]]] = []
-    amount: float
-    payment_method: Optional[PaymentMethod] = None
-    source: str = "admin"
-    raw_message_id: Optional[str] = None
-    customer_phone: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class Customer(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: str
-    name: str
-    phone: str
-    external_id: Optional[str] = None
-    risk_flags: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class Receivable(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: str
-    customer_id: str
-    doc_number: Optional[str] = None
-    principal_amount: float
-    balance: float
-    due_date: datetime
-    status: str = "open"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ScoreSnapshot(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sme_id: str
-    score: int
-    band: str  # A, B, C, D
-    reasons_json: Optional[List[str]] = []
-    dt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class WebhookLog(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    provider: str
-    payload: Dict[str, Any]
-    status: str = "pending"
-    attempts: int = 0
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-# DTO Models for requests
-class UserCreate(BaseModel):
-    name: str
-    phone: str
-    email: Optional[str] = None
-    password: str
-    role: UserRole
-    sme_id: Optional[str] = None
-
-class UserLogin(BaseModel):
-    phone: str
-    password: str
-
-class SMECreate(BaseModel):
-    nombre_negocio: str
-    owner_phone: str
-    departamento: str
-    municipio: str
-    numero_celular_negocio: str
-
-class ProductCreate(BaseModel):
-    name: str
-    unit_cost: Optional[float] = 0
-    sale_price: float
-    service: bool = False
-
-class TransactionCreate(BaseModel):
-    type: TransactionType
-    items_json: Optional[List[Dict[str, Any]]] = []
-    amount: float
-    payment_method: Optional[PaymentMethod] = None
-    customer_phone: Optional[str] = None
-
-class SubscribeRequest(BaseModel):
-    nombre: str
-    username: str
-    celular: str
-    nombre_negocio: str
-    departamento: str
-    municipio: str
-    numero_celular_negocio: str
-
-# Token model
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 # Helper functions
 def hash_password(password: str) -> str:
@@ -295,7 +134,8 @@ async def create_sme(sme_data: SMECreate, current_user: User = Depends(get_curre
         owner_phone=sme_data.owner_phone,
         departamento=sme_data.departamento,
         municipio=sme_data.municipio,
-        numero_celular_negocio=sme_data.numero_celular_negocio
+        numero_celular_negocio=sme_data.numero_celular_negocio,
+        plan=sme_data.plan
     )
     
     await db.smes.insert_one(sme.dict())
@@ -313,6 +153,27 @@ async def get_sme(sme_id: str, current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="SME not found")
     return SME(**sme)
 
+@api_router.put("/smes/{sme_id}")
+async def update_sme(sme_id: str, sme_data: SMEUpdate, current_user: User = Depends(get_current_user)):
+    """Update SME information"""
+    try:
+        update_data = {k: v for k, v in sme_data.dict().items() if v is not None}
+        
+        if update_data:
+            result = await db.smes.update_one(
+                {"id": sme_id},
+                {"$set": update_data}
+            )
+            
+            if result.modified_count == 0:
+                raise HTTPException(status_code=404, detail="SME not found")
+        
+        return {"success": True, "message": "SME updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating SME: {e}")
+        raise HTTPException(status_code=500, detail="Error updating SME")
+
 # Product endpoints
 @api_router.post("/products", response_model=Product)
 async def create_product(product_data: ProductCreate, sme_id: str, current_user: User = Depends(get_current_user)):
@@ -321,7 +182,8 @@ async def create_product(product_data: ProductCreate, sme_id: str, current_user:
         name=product_data.name,
         unit_cost=product_data.unit_cost,
         sale_price=product_data.sale_price,
-        service=product_data.service
+        service=product_data.service,
+        category=product_data.category
     )
     
     await db.products.insert_one(product.dict())
@@ -335,6 +197,47 @@ async def get_products(sme_id: Optional[str] = None, current_user: User = Depend
     
     products = await db.products.find(filter_query).to_list(1000)
     return [Product(**product) for product in products]
+
+@api_router.put("/products/{product_id}")
+async def update_product(product_id: str, product_data: ProductCreate, sme_id: str, current_user: User = Depends(get_current_user)):
+    """Update a product"""
+    try:
+        updated_data = {
+            "name": product_data.name,
+            "unit_cost": product_data.unit_cost,
+            "sale_price": product_data.sale_price,
+            "service": product_data.service,
+            "category": product_data.category
+        }
+        
+        result = await db.products.update_one(
+            {"id": product_id, "sme_id": sme_id},
+            {"$set": updated_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        return {"success": True, "message": "Product updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating product: {e}")
+        raise HTTPException(status_code=500, detail="Error updating product")
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a product"""
+    try:
+        result = await db.products.delete_one({"id": product_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        return {"success": True, "message": "Product deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting product: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting product")
 
 # Transaction endpoints
 @api_router.post("/transactions", response_model=Transaction)
@@ -404,7 +307,8 @@ async def subscribe_business(subscription_data: SubscribeRequest):
         owner_phone=subscription_data.celular,
         departamento=subscription_data.departamento,
         municipio=subscription_data.municipio,
-        numero_celular_negocio=subscription_data.numero_celular_negocio
+        numero_celular_negocio=subscription_data.numero_celular_negocio,
+        plan=subscription_data.plan
     )
     
     await db.smes.insert_one(sme.dict())
@@ -622,48 +526,6 @@ async def test_speech_processing(current_user: User = Depends(get_current_user))
     result = await test_speech_processor()
     return result
 
-# Enhanced Products endpoints
-@api_router.put("/products/{product_id}")
-async def update_product(product_id: str, product_data: ProductCreate, sme_id: str, current_user: User = Depends(get_current_user)):
-    """Update a product"""
-    try:
-        updated_data = {
-            "name": product_data.name,
-            "unit_cost": product_data.unit_cost,
-            "sale_price": product_data.sale_price,
-            "service": product_data.service,
-            "category": product_data.category
-        }
-        
-        result = await db.products.update_one(
-            {"id": product_id, "sme_id": sme_id},
-            {"$set": updated_data}
-        )
-        
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Product not found")
-        
-        return {"success": True, "message": "Product updated successfully"}
-        
-    except Exception as e:
-        logger.error(f"Error updating product: {e}")
-        raise HTTPException(status_code=500, detail="Error updating product")
-
-@api_router.delete("/products/{product_id}")
-async def delete_product(product_id: str, current_user: User = Depends(get_current_user)):
-    """Delete a product"""
-    try:
-        result = await db.products.delete_one({"id": product_id})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Product not found")
-        
-        return {"success": True, "message": "Product deleted successfully"}
-        
-    except Exception as e:
-        logger.error(f"Error deleting product: {e}")
-        raise HTTPException(status_code=500, detail="Error deleting product")
-
 # Administrative endpoints
 @api_router.get("/admin/clients")
 async def get_all_clients(current_user: User = Depends(get_current_user)):
@@ -707,6 +569,31 @@ async def update_client_status(client_id: str, status_data: dict, current_user: 
     except Exception as e:
         logger.error(f"Error updating client status: {e}")
         raise HTTPException(status_code=500, detail="Error updating client status")
+
+@api_router.put("/admin/clients/{client_id}")
+async def update_client(client_id: str, client_data: dict, current_user: User = Depends(get_current_user)):
+    """Update complete client information"""
+    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        # Filter out None values
+        update_data = {k: v for k, v in client_data.items() if v is not None}
+        
+        if update_data:
+            result = await db.smes.update_one(
+                {"id": client_id},
+                {"$set": update_data}
+            )
+            
+            if result.modified_count == 0:
+                raise HTTPException(status_code=404, detail="Client not found")
+        
+        return {"success": True, "message": "Client updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating client: {e}")
+        raise HTTPException(status_code=500, detail="Error updating client")
 
 @api_router.get("/admin/configuration")
 async def get_admin_configuration(current_user: User = Depends(get_current_user)):
