@@ -67,7 +67,15 @@ const ClientManagement = ({ currentUser }) => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const openEditDialog = (client) => {
+    setEditingClient(client);
+    setShowEditDialog(true);
+  };
+
+  const closeEditDialog = () => {
+    setEditingClient(null);
+    setShowEditDialog(false);
+  };
     const colors = {
       active: 'bg-green-100 text-green-800',
       inactive: 'bg-red-100 text-red-800',
