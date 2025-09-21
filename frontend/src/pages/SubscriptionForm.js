@@ -231,6 +231,62 @@ const SubscriptionForm = () => {
                 </div>
               </div>
 
+              {/* Plan Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CreditCard className="w-5 h-5 text-[#25D366]" />
+                  <h3 className="font-semibold text-[#3A3A3A]">Selecciona tu Plan</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Free Plan */}
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      formData.plan === 'free' 
+                        ? 'border-[#25D366] bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleInputChange('plan', 'free')}
+                  >
+                    <div className="text-center">
+                      <h4 className="font-semibold text-lg">Plan Free</h4>
+                      <p className="text-2xl font-bold text-[#25D366] my-2">Q0/mes</p>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Hasta 100 transacciones/mes</li>
+                        <li>• Funciones básicas de IA</li>
+                        <li>• Reportes simples</li>
+                        <li>• Soporte por email</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  {/* Pro Plan */}
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
+                      formData.plan === 'pro' 
+                        ? 'border-[#25D366] bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleInputChange('plan', 'pro')}
+                  >
+                    <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                      Recomendado
+                    </div>
+                    <div className="text-center">
+                      <h4 className="font-semibold text-lg">Plan Pro</h4>
+                      <p className="text-2xl font-bold text-purple-600 my-2">Q99/mes</p>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Transacciones ilimitadas</li>
+                        <li>• IA avanzada + Voz</li>
+                        <li>• Score crediticio</li>
+                        <li>• Reportes avanzados</li>
+                        <li>• Soporte prioritario</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Información del Negocio */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-3">
